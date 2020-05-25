@@ -22,5 +22,6 @@ int main(int argc, char *argv[])
     float gamma = 0.8; //discount factor
 
     CHNJAR003::ValueIteration algo(6, Actions, Rewards, gamma);
-    std::cout << algo.Q(6, 3) << std::endl;
+    algo.performValueIteration();
+    //std::cout << algo.Q(2, 3) << std::endl;
 }
