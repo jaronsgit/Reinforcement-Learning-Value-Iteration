@@ -6,13 +6,21 @@
 namespace CHNJAR003
 {
 
-    ValueIteration::ValueIteration(int numStates, const std::map<int, std::vector<int>> &actions, const std::map<int, std::map<int, float>> &rewards, float gamma) : numStates(numStates), Actions(actions), V(std::vector<float>(numStates, 0)), Rewards(rewards), gamma(gamma)
+    ValueIteration::ValueIteration(const int numStates, const std::map<int, std::vector<int>> &actions, const std::map<int, std::map<int, float>> &rewards, float gamma) : numStates(numStates), Actions(actions), V(std::vector<float>(numStates, 0)), Rewards(rewards), gamma(gamma)
     {
     }
 
-    const float ValueIteration::Q(int state, int action)
+    const float ValueIteration::Q(const int state, const int action)
     {
-        return Rewards[state][action] + gamma * V[action - 1]; //Reward for transition + discount*Value function of s'(deterministic)
+        auto it = Rewards.find(state);
+        if (it != Rewards.end())
+        {
+            return Rewards[state][action] + gamma * V[action - 1]; //Reward for transition + discount*Value function of s'(deterministic)
+        }
+        else
+        {
+            return 0 + gamma * V[action - 1]; //Reward for transition + discount*Value function of s'(deterministic)
+        }
     }
 
     void ValueIteration::performValueIteration(void)
@@ -41,16 +49,20 @@ namespace CHNJAR003
                     float currentMaxQ = Q(s, Actions[s][0]);
                     //std::cout << "Current max: " << s << "->" << Actions[s][0] << " : Q(t-1)=" << currentMaxQ << std::endl;
 
-                    for (int a = 1; a < Actions[s].size(); ++a)
+                    if (Actions[s].size() > 1)
                     {
-                        float nextQ = Q(s, Actions[s][a]);
-                        //std::cout << "next Q: " << s << "->" << Actions[s][a] << " : Q(t-1)=" << nextQ << std::endl;
-                        if (nextQ > currentMaxQ)
+                        for (int a = 1; a < Actions[s].size(); ++a)
                         {
-                            currentMaxQ = nextQ;
-                            //std::cout << "Current max: " << s << "->" << Actions[s][a] << " : Q(t-1)=" << currentMaxQ << std::endl;
+                            float nextQ = Q(s, Actions[s][a]);
+                            //std::cout << "next Q: " << s << "->" << Actions[s][a] << " : Q(t-1)=" << nextQ << std::endl;
+                            if (nextQ > currentMaxQ)
+                            {
+                                currentMaxQ = nextQ;
+                                //std::cout << "Current max: " << s << "->" << Actions[s][a] << " : Q(t-1)=" << currentMaxQ << std::endl;
+                            }
                         }
                     }
+
                     //std::cout << "Vt = " << currentMaxQ << std::endl<< std::endl;
 
                     Vnew[s - 1] = currentMaxQ;
@@ -62,11 +74,46 @@ namespace CHNJAR003
             {
                 V = Vnew; //Synchronous update of V(s)
                 printGrid(iterationCount);
+                performPolicyExtraction();
                 break;
             }
 
             V = Vnew; //Synchronous update of V(s)
             printGrid(iterationCount);
+        }
+    }
+
+    void ValueIteration::performPolicyExtraction(void)
+    {
+        //Iterate though the states in the environment
+        for (int s = 1; s <= numStates; ++s)
+        {
+            //If there are possible actions in the current state -> determine the optimal action to take based off of the state values
+            if (Actions[s].size() != 0)
+            {
+                int aOpt = Actions[s][0];
+                float currentMaxQ = Q(s, Actions[s][0]);
+                //std::cout << "Current max: " << s << "->" << Actions[s][0] << " : Q(t-1)=" << currentMaxQ << std::endl;
+
+                for (int a = 1; a < Actions[s].size(); ++a)
+                {
+                    float nextQ = Q(s, Actions[s][a]);
+                    //std::cout << "next Q: " << s << "->" << Actions[s][a] << " : Q(t-1)=" << nextQ << std::endl;
+                    if (nextQ > currentMaxQ)
+                    {
+                        aOpt = Actions[s][a];
+                        currentMaxQ = nextQ;
+                        //std::cout << "Current max: " << s << "->" << Actions[s][a] << " : Q(t-1)=" << currentMaxQ << std::endl;
+                    }
+                }
+                //std::cout << "Vt = " << currentMaxQ << std::endl<< std::endl;
+                Policy[s] = aOpt;
+            }
+        }
+
+        for (auto p : Policy)
+        {
+            std::cout << p.first << " : " << p.second << "\n";
         }
     }
 
