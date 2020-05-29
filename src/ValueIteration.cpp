@@ -6,7 +6,7 @@
 namespace CHNJAR003
 {
 
-    ValueIteration::ValueIteration(const int numStates, const std::map<int, std::vector<int>> &actions, const std::map<int, std::map<int, float>> &rewards, float gamma) : numStates(numStates), Actions(actions), V(std::vector<float>(numStates, 0)), Rewards(rewards), gamma(gamma)
+    ValueIteration::ValueIteration(const int numStates, const std::map<int, std::vector<int>> &actions, const std::map<int, std::map<int, float>> &rewards, const float gamma) : numStates(numStates), Actions(actions), V(std::vector<float>(numStates, 0)), Rewards(rewards), gamma(gamma)
     {
     }
 
@@ -27,7 +27,6 @@ namespace CHNJAR003
     {
 
         int iterationCount = 0;
-        printGrid(iterationCount);
 
         while (true)
         {
@@ -37,33 +36,23 @@ namespace CHNJAR003
 
             for (int s = 1; s <= numStates; ++s)
             {
-                //std::cout << "STATE: " << s << std::endl;
-                //Print out the actions for each state - testing purposes
-                /*std::cout << "Actions for " << s << " are: ";
-                    std::for_each(Actions[s].begin(), Actions[s].end(), [](int a) { std::cout << a << " "; });
-                    std::cout << std::endl;*/
-
                 //If not in an end state
                 if (Actions[s].size() != 0)
                 {
                     float currentMaxQ = Q(s, Actions[s][0]);
-                    //std::cout << "Current max: " << s << "->" << Actions[s][0] << " : Q(t-1)=" << currentMaxQ << std::endl;
 
                     if (Actions[s].size() > 1)
                     {
                         for (int a = 1; a < Actions[s].size(); ++a)
                         {
                             float nextQ = Q(s, Actions[s][a]);
-                            //std::cout << "next Q: " << s << "->" << Actions[s][a] << " : Q(t-1)=" << nextQ << std::endl;
+
                             if (nextQ > currentMaxQ)
                             {
                                 currentMaxQ = nextQ;
-                                //std::cout << "Current max: " << s << "->" << Actions[s][a] << " : Q(t-1)=" << currentMaxQ << std::endl;
                             }
                         }
                     }
-
-                    //std::cout << "Vt = " << currentMaxQ << std::endl<< std::endl;
 
                     Vnew[s - 1] = currentMaxQ;
                 }
@@ -73,13 +62,13 @@ namespace CHNJAR003
             if (converged(Vnew))
             {
                 V = Vnew; //Synchronous update of V(s)
-                printGrid(iterationCount);
+
+                numIterations = iterationCount;
                 performPolicyExtraction();
                 break;
             }
 
             V = Vnew; //Synchronous update of V(s)
-            printGrid(iterationCount);
         }
     }
 
@@ -93,36 +82,34 @@ namespace CHNJAR003
             {
                 int aOpt = Actions[s][0];
                 float currentMaxQ = Q(s, Actions[s][0]);
-                //std::cout << "Current max: " << s << "->" << Actions[s][0] << " : Q(t-1)=" << currentMaxQ << std::endl;
 
                 for (int a = 1; a < Actions[s].size(); ++a)
                 {
                     float nextQ = Q(s, Actions[s][a]);
-                    //std::cout << "next Q: " << s << "->" << Actions[s][a] << " : Q(t-1)=" << nextQ << std::endl;
+
                     if (nextQ > currentMaxQ)
                     {
                         aOpt = Actions[s][a];
                         currentMaxQ = nextQ;
-                        //std::cout << "Current max: " << s << "->" << Actions[s][a] << " : Q(t-1)=" << currentMaxQ << std::endl;
                     }
                 }
-                //std::cout << "Vt = " << currentMaxQ << std::endl<< std::endl;
+
                 Policy[s] = aOpt;
             }
         }
 
-        for (auto p : Policy)
+        /*for (auto p : Policy)
         {
             std::cout << p.first << " : " << p.second << "\n";
-        }
+        }*/
     }
 
-    bool ValueIteration::converged(const std::vector<float> &newV)
+    bool ValueIteration::converged(const std::vector<float> &newV) const
     {
         float epsilon = 0.00001;
 
         std::vector<float> result(numStates, 0);
-        std::transform(newV.begin(), newV.end(), V.begin(), result.begin(), std::minus<float>()); //result[i] = newV[i] - oldV[i];
+        std::transform(newV.begin(), newV.end(), V.begin(), result.begin(), std::minus<float>());
 
         bool conv = true;
         for (float f : result)
@@ -136,23 +123,63 @@ namespace CHNJAR003
         return conv;
     }
 
-    void ValueIteration::printGrid(int t)
+    std::string ValueIteration::policyRouteFromState(const int startState) const
     {
-        std::cout << "______GRID WORLD______ t=" << t << std::endl;
-        std::cout << "\t|0|\t|1|\t|2|\n";
-        std::cout << "|1|\t";
+        int currentState = startState;
+        std::string optimalRoute = "S" + std::to_string(currentState);
+
+        while (Actions.at(currentState).size() != 0)
+        {
+            int optAction = Policy.at(currentState);
+            optimalRoute += " -> S" + std::to_string(optAction);
+            currentState = optAction;
+        }
+
+        return optimalRoute;
+    }
+
+    std::string ValueIteration::formatGrid(const int t) const
+    {
+        std::string formattedGrid;
+
+        formattedGrid += "______GRID WORLD______ t=" + std::to_string(t) + "\n";
+        formattedGrid += "\t|0|\t|1|\t|2|\n";
+        formattedGrid += "|1|\t";
         for (int i = 0; i < 3; ++i)
         {
-            std::cout << V[i] << "\t";
+            formattedGrid += std::to_string(V[i]) + "\t";
         }
-        std::cout << std::endl;
-        std::cout << "|0|\t";
+        formattedGrid += "\n";
+        formattedGrid += "|0|\t";
         for (int i = 3; i < 6; ++i)
         {
-            std::cout << V[i] << "\t";
+            formattedGrid += std::to_string(V[i]) + "\t";
         }
-        std::cout << "\n----------------------\n"
-                  << std::endl;
+        formattedGrid += "\n----------------------\n\n";
+
+        return formattedGrid;
+    }
+
+    std::ostream &operator<<(std::ostream &os, const ValueIteration &vi)
+    {
+        os << "Question 1:  How many iterations does it take for the Value Iteration algorithm to converge?\nIn an output text file list the optimal values (V for each state).\n";
+        os << "\nThe algorithm takes: " << vi.numIterations << " iterations to converge.\n\n";
+        os << "The optimal values of each state are represented in grid form as well as listed below:\n";
+        os << vi.formatGrid(vi.numIterations) << std::endl;
+
+        for (int i = 0; i < vi.V.size(); ++i)
+        {
+            os << "V*(" << i + 1 << ") = " << vi.V[i] << std::endl;
+        }
+
+        os << "\nQuestion 2: Assume we start in state s1, give the states that form the optimal policy to reach the terminal state (s3).\n\n";
+        os << vi.policyRouteFromState(1) << std::endl;
+
+        os << "\nQuestion 3: Is it possible to change the reward function function so that V changes, but the optimal policy remains unchanged?\n\n";
+        os << "It is possible to modify the reward function so that the optimal values of each state change, such that the optimal policy remains the same.\n";
+        os << "The reward function can be changed such that the rewards given to the agent are a scaled by a constant factor. For example, the rewards can be multiplied by 3.\n";
+        os << "The V* values will change (increase), however the optimal policy will remain the same.\n";
+        return os;
     }
 
 } // namespace CHNJAR003

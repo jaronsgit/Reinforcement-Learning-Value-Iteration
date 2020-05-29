@@ -23,5 +23,7 @@ int main(int argc, char *argv[])
 
     CHNJAR003::ValueIteration algo(6, Actions, Rewards, gamma);
     algo.performValueIteration();
+    std::cout << algo;
+    //std::cout << algo.policyRouteFromState(1) << std::endl;
     //std::cout << algo.Q(2, 3) << std::endl;
 }
