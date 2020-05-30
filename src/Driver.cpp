@@ -2,6 +2,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include <fstream>
 
 int main(int argc, char *argv[])
 {
@@ -21,9 +22,14 @@ int main(int argc, char *argv[])
 
     float gamma = 0.8; //discount factor
 
-    CHNJAR003::ValueIteration algo(6, Actions, Rewards, gamma);
-    algo.performValueIteration();
-    std::cout << algo;
-    //std::cout << algo.policyRouteFromState(1) << std::endl;
-    //std::cout << algo.Q(2, 3) << std::endl;
+    CHNJAR003::ValueIteration valit(6, Actions, Rewards, gamma, 0.0001);
+    valit.performValueIteration();
+    //Write results to console
+    std::cout << valit;
+    //Write results to text file
+    std::ofstream results;
+    results.open("Results.txt");
+    results << valit;
+    results.close();
+    return 0;
 }

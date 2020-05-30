@@ -6,7 +6,7 @@
 namespace CHNJAR003
 {
 
-    ValueIteration::ValueIteration(const int numStates, const std::map<int, std::vector<int>> &actions, const std::map<int, std::map<int, float>> &rewards, const float gamma) : numStates(numStates), Actions(actions), V(std::vector<float>(numStates, 0)), Rewards(rewards), gamma(gamma)
+    ValueIteration::ValueIteration(const int numStates, const std::map<int, std::vector<int>> &actions, const std::map<int, std::map<int, float>> &rewards, const float gamma, const float epsilon) : numStates(numStates), Actions(actions), V(std::vector<float>(numStates, 0)), Rewards(rewards), gamma(gamma), epsilon(epsilon)
     {
     }
 
@@ -86,9 +86,10 @@ namespace CHNJAR003
                 for (int a = 1; a < Actions[s].size(); ++a)
                 {
                     float nextQ = Q(s, Actions[s][a]);
-
+                    //If other possible action yields a greater expected utility
                     if (nextQ > currentMaxQ)
                     {
+                        //record the optimal action that yielded the greater value
                         aOpt = Actions[s][a];
                         currentMaxQ = nextQ;
                     }
@@ -97,19 +98,13 @@ namespace CHNJAR003
                 Policy[s] = aOpt;
             }
         }
-
-        /*for (auto p : Policy)
-        {
-            std::cout << p.first << " : " << p.second << "\n";
-        }*/
     }
 
     bool ValueIteration::converged(const std::vector<float> &newV) const
     {
-        float epsilon = 0.00001;
 
         std::vector<float> result(numStates, 0);
-        std::transform(newV.begin(), newV.end(), V.begin(), result.begin(), std::minus<float>());
+        std::transform(newV.begin(), newV.end(), V.begin(), result.begin(), std::minus<float>()); //Subtract the new values from the old value
 
         bool conv = true;
         for (float f : result)
@@ -128,6 +123,7 @@ namespace CHNJAR003
         int currentState = startState;
         std::string optimalRoute = "S" + std::to_string(currentState);
 
+        //While not at an end state -> choose record optimal action to take in each state until reach end state
         while (Actions.at(currentState).size() != 0)
         {
             int optAction = Policy.at(currentState);
